@@ -1,110 +1,29 @@
-# SnapLogic Integration Lab
+# API Pipeline and the 429 Error Queue
 
-**Author:** [Faiz Elahi](https://github.com/faizilahi) (`faizilahi`) · **Type:** EDUCATIONAL LAB · **Synthetic data only**
+[Faiz Elahi](https://www.linkedin.com/in/faizilahi) — [pendataco.com](https://pendataco.com) — [github.com/faizilahi](https://github.com/faizilahi)
 
----
+Synthetic data only. No vendor-customer employment claim.
 
-## Educational disclaimer
+A SnapLogic-style pipeline pulled paginated `/v1/shipments` and melted under
+HTTP 429s. Failed pages landed in an error queue; without drain logic the next
+run skipped them and under-counted shipments by **640**.
 
-This is an **educational portfolio lab**. Datasets are **synthetic**. It does **not** claim employment at a customer, hospital, bank, SAP shop, or Oracle estate. No real PHI/PII. No live cloud spend. No API keys required.
+## The pipeline
 
----
+`pipelines/shipments_api.json` — rest read → paginate → map → write.
 
-## Problem statement
+## The 429s
 
-Low-latency API paths and AutoSync-style SaaS→warehouse loads need clear error queues and idempotent upserts.
+Simulator injects **8** throttled pages (80 rows each). Retry-After honored in
+`src/throttle.py`.
 
-**Domain focus:** SaaS + API integration
+## The queue
 
----
-
-## Why this tool (SnapLogic-style Ultra/Triggered pipelines)
-
-| Point-to-point scripts | Pipeline with error queue |
-|---|---|
-| Duplicate posts | Idempotent keys |
-
----
-
-## Architecture
-
-```mermaid
-flowchart LR
-  GEN[generate_synthetic_data.py]
-  DATA[data/*.csv]
-  RUN[run_lab.py]
-  OUT[output/*.csv]
-  CHART[generate_charts.py]
-  IMG[docs/images/*.png]
-  GEN --> DATA --> RUN --> OUT
-  OUT --> CHART --> IMG
-```
-
-See [`docs/architecture.md`](docs/architecture.md).
-
----
-
-## Dataset dictionary
-
-| File | Notes |
-|------|-------|
-| `data/api_events.jsonl` | Triggered task input |
-| `output/summary.csv` | Load stats |
-
----
-
-## Prerequisites
-
-- Python 3.10+
-- Packages in `requirements.txt`
-
----
-
-## How to run
+Error queue depth peaked at **8** pages. Draining before the next watermark
+advanced restored total shipments to **4,800** (vs incomplete **4,160**).
 
 ```powershell
-cd "snaplogic-integration-lab"
-python -m venv .venv
-.\\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 python scripts/generate_synthetic_data.py
-python src/run_lab.py
-python scripts/generate_charts.py
+python src/run_pipeline.py
 ```
-
-Inspect `output/summary.csv` and `docs/images/primary_metric.png`.
-
----
-
-## Local vs cloud (honest)
-
-Python pipeline stand-in for SnapLogic snaps. No SnapLogic tenant.
-
----
-
-## Results interpretation
-
-Open `output/` CSVs and the PNGs under `docs/images/`. Numbers are synthetic teaching fixtures — use them to explain grain, filters, and control totals, not as real business KPIs.
-
----
-
-## Limitations
-
-- Stand-in engines (DuckDB/SQLite/pandas) replace paid MPP/warehouses where noted.
-- Simplified schemas vs production SAP/Oracle/Hive estates.
-- Charts are matplotlib teaching visuals, not vendor BI embeds.
-
----
-
-## Exercises
-
-1. Add exponential backoff on 429 teaching flag.
-2. Dead-letter poison messages.
-3. RACI vs Boomi/Matillion note.
-
----
-
-## License / attribution
-
-Educational portfolio content by Faiz Elahi. Synthetic data for teaching only.
-

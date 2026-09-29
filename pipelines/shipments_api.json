@@ -1,0 +1,6 @@
+{
+  "pipeline": "shipments_api",
+  "snaps": ["rest_get", "pager", "mapper", "error_queue", "warehouse_write"],
+  "page_size": 80,
+  "max_retries": 3
+}

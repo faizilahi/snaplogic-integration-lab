@@ -1,14 +1,11 @@
-import json
 from pathlib import Path
-import numpy as np
-RNG=np.random.default_rng(10)
-ROOT=Path(__file__).resolve().parents[1]
-DATA=ROOT/"data"; DATA.mkdir(parents=True, exist_ok=True)
-path=DATA/"api_events.jsonl"
-with path.open("w",encoding="utf-8") as f:
-  for i in range(1,121):
-    rec={"event_id":f"EVT{i}","account_id":f"A{int(RNG.integers(1,40))}","status":200 if RNG.random()>0.1 else 429,
-      "payload":{"amount":round(float(RNG.uniform(10,200)),2)}}
-    f.write(json.dumps(rec)+"\n")
-print("Wrote SnapLogic events")
-
+import json, pandas as pd
+ROOT = Path(__file__).resolve().parents[1]
+DATA = ROOT / "data"; DATA.mkdir(parents=True, exist_ok=True)
+rows = [{"shipment_id": f"SH{i:05d}", "status": "SHIPPED", "weight_lb": round((i % 50) + 1.5, 2)} for i in range(4800)]
+# 60 pages of 80
+pages = [rows[i:i+80] for i in range(0, 4800, 80)]
+# mark 8 pages as 429
+throttle_pages = list(range(10, 18))
+(DATA / "api_pages.json").write_text(json.dumps({"pages": pages, "throttle_pages": throttle_pages}), encoding="utf-8")
+print("pages", len(pages), "throttled", throttle_pages)
